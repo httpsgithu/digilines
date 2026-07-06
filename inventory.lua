@@ -139,16 +139,20 @@ local tube_insert_object = function(pos, _, original_stack, direction)
 end
 
 local formspec_header = ""
+local formspec_hotbar_bg = ""
 
 if core.get_modpath("mcl_formspec") then
 	formspec_header = mcl_formspec.get_itemslot_bg(0,1,8,4)..
 		mcl_formspec.get_itemslot_bg(0,6,8,4)
 end
 
-core.register_alias("digilines_inventory:chest", "digilines:chest")
+if core.global_exists("default") then
+	formspec_hotbar_bg = default.get_hotbar_bg(0,6)
+end
 
-core.register_node("digilines:chest", {
+local chest_ndef = {
 	description = S("Digiline Chest"),
+	drawtype = "normal",
 	tiles = {
 		"default_chest_top.png"..tubeconn,
 		"default_chest_top.png"..tubeconn,
@@ -172,7 +176,7 @@ core.register_node("digilines:chest", {
 			"label[0,0;" .. S("Digiline Chest") .. "]" ..
 			"list[current_name;main;0,1;8,4;]"..
 			"field[2,5.5;5,1;channel;" .. S("Channel") .. ";${channel}]"..
-			((default and default.get_hotbar_bg) and default.get_hotbar_bg(0,6) or "")..
+			formspec_hotbar_bg..
 			"list[current_player;main;0,6;8,4;]"..
 			"listring[]")
 		local inv = meta:get_inventory()
@@ -258,7 +262,20 @@ core.register_node("digilines:chest", {
 		send_empty_if_empty(pos)
 		core.log("action", player:get_player_name().." takes stuff from chest at "..core.pos_to_string(pos))
 	end
-})
+}
+
+-- Mineclone2 / VoxeLands compatibility
+if core.get_modpath("mcl_chests") then
+	local def = core.registered_nodes["mcl_chests:chest"]
+	chest_ndef.drawtype = def.drawtype
+	chest_ndef.mesh     = def.mesh
+	chest_ndef.tiles    = table.copy(def.tiles)
+	-- TODO `pipeworks_enabled`: There is currently (July 2026) no support for mcl_chest models in pipeworks.
+end
+
+core.register_alias("digilines_inventory:chest", "digilines:chest")
+
+core.register_node("digilines:chest", chest_ndef)
 
 if core.global_exists("tubelib") then
 	local speculative_pull = nil
